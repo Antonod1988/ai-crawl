@@ -1,7 +1,7 @@
 import { GameSettings, Difficulty, AIProvider } from '../types';
 
 export const DEFAULT_SETTINGS: GameSettings = {
-    language: "Russian",
+    language: "English",
     difficulty: Difficulty.NORMAL,
     theme: "Dark Fantasy",
     enableImages: true,
