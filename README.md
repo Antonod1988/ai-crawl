@@ -1,4 +1,4 @@
-# 🌌 Aether Crawl
+# 🌌 Aether Crawl (ver 0.1 vibcoded with Gemini 3.0)
 
 **Aether Crawl** is an infinite, AI-generated roguelike RPG where an Large Language Model (LLM) acts as your Dungeon Master. 
 
