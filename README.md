@@ -2,9 +2,9 @@
 
 **Aether Crawl** is an infinite, AI-generated roguelike RPG where an Large Language Model (LLM) acts as your Dungeon Master. 
 
-Every run offers a unique story, custom enemies, and procedurally generated loot, visualized with on-the-fly AI image generation.
+Every run offers a unique story, custom enemies, and procedurally generated loot, visualized with on-the-fly AI image generation (images not working currently).
 
-![Character Portrait Placeholder](https://via.placeholder.com/800x400?text=AI+Generated+Roleplaying)
+
 
 ## ✨ key Features
 
