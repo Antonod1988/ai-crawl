@@ -1,0 +1,5 @@
+{
+  "name": "AI Crawl",
+  "description": "A dynamic, AI-driven roguelike text RPG where Gemini acts as the Dungeon Master.",
+  "requestFramePermissions": []
+}
