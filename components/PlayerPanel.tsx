@@ -116,7 +116,10 @@ const PlayerPanel: React.FC<PlayerPanelProps> = ({ player, onRegenerateImage, is
           <div className="flex flex-wrap gap-1">
             {/* Debuffs */}
             {(player.statusEffects.toxic || 0) > 0 && (
-              <div className="bg-green-900/30 border border-green-700/50 px-2 py-1 rounded flex items-center gap-2 text-xs text-green-400 animate-pulse">
+              <div
+                className="bg-green-900/30 border border-green-700/50 px-2 py-1 rounded flex items-center gap-2 text-xs text-green-400 animate-pulse cursor-help"
+                title={getTranslation(language, 'toxicDesc')}
+              >
                 <span>☠️ {getTranslation(language, 'toxic')}</span>
                 <span className="bg-black/50 px-1 rounded text-[10px]">
                   {Math.ceil(player.maxHp * (0.10 + 0.01 * ((player.statusEffects.toxic || 1) - 1)))} dmg
@@ -124,37 +127,55 @@ const PlayerPanel: React.FC<PlayerPanelProps> = ({ player, onRegenerateImage, is
               </div>
             )}
             {(player.statusEffects.burning || 0) > 0 && (
-              <div className="bg-orange-900/30 border border-orange-700/50 px-2 py-1 rounded flex items-center gap-2 text-xs text-orange-400 animate-pulse">
+              <div
+                className="bg-orange-900/30 border border-orange-700/50 px-2 py-1 rounded flex items-center gap-2 text-xs text-orange-400 animate-pulse cursor-help"
+                title={getTranslation(language, 'burningDesc')}
+              >
                 <span>🔥 {getTranslation(language, 'burning')}</span>
                 <span className="bg-black/50 px-1 rounded text-[10px]">{player.statusEffects.burning}t</span>
               </div>
             )}
             {(player.statusEffects.chilled || 0) > 0 && (
-              <div className="bg-cyan-900/30 border border-cyan-700/50 px-2 py-1 rounded flex items-center gap-2 text-xs text-cyan-400">
+              <div
+                className="bg-cyan-900/30 border border-cyan-700/50 px-2 py-1 rounded flex items-center gap-2 text-xs text-cyan-400 cursor-help"
+                title={getTranslation(language, 'chilledDesc')}
+              >
                 <span>❄️ {getTranslation(language, 'chilled')}</span>
                 <span className="bg-black/50 px-1 rounded text-[10px]">{player.statusEffects.chilled}t</span>
               </div>
             )}
             {(player.statusEffects.shocked || 0) > 0 && (
-              <div className="bg-yellow-900/30 border border-yellow-700/50 px-2 py-1 rounded flex items-center gap-2 text-xs text-yellow-400">
+              <div
+                className="bg-yellow-900/30 border border-yellow-700/50 px-2 py-1 rounded flex items-center gap-2 text-xs text-yellow-400 cursor-help"
+                title={getTranslation(language, 'shockedDesc')}
+              >
                 <span>⚡ {getTranslation(language, 'shocked')}</span>
                 <span className="bg-black/50 px-1 rounded text-[10px]">{player.statusEffects.shocked}t</span>
               </div>
             )}
             {(player.statusEffects.sundered || 0) > 0 && (
-              <div className="bg-red-900/20 border border-red-800 px-2 py-1 rounded flex items-center gap-2 text-xs text-red-400">
+              <div
+                className="bg-red-900/20 border border-red-800 px-2 py-1 rounded flex items-center gap-2 text-xs text-red-400 cursor-help"
+                title={getTranslation(language, 'sunderedDesc')}
+              >
                 <span>💔 {getTranslation(language, 'sundered')}</span>
                 <span className="bg-black/50 px-1 rounded text-[10px]">{player.statusEffects.sundered}t</span>
               </div>
             )}
             {(player.statusEffects.blinded || 0) > 0 && (
-              <div className="bg-gray-800 border border-gray-600 px-2 py-1 rounded flex items-center gap-2 text-xs text-gray-400">
+              <div
+                className="bg-gray-800 border border-gray-600 px-2 py-1 rounded flex items-center gap-2 text-xs text-gray-400 cursor-help"
+                title={getTranslation(language, 'blindedDesc')}
+              >
                 <span>👁️ {getTranslation(language, 'blinded')}</span>
                 <span className="bg-black/50 px-1 rounded text-[10px]">{player.statusEffects.blinded}t</span>
               </div>
             )}
             {(player.statusEffects.stunned || 0) > 0 && (
-              <div className="bg-yellow-900/30 border border-yellow-700/50 px-2 py-1 rounded flex items-center gap-2 text-xs text-yellow-400">
+              <div
+                className="bg-yellow-900/30 border border-yellow-700/50 px-2 py-1 rounded flex items-center gap-2 text-xs text-yellow-400 cursor-help"
+                title={getTranslation(language, 'stunnedDesc')}
+              >
                 <span>💫 {getTranslation(language, 'stunned')}</span>
                 <span className="bg-black/50 px-1 rounded text-[10px]">{player.statusEffects.stunned}t</span>
               </div>
@@ -162,31 +183,46 @@ const PlayerPanel: React.FC<PlayerPanelProps> = ({ player, onRegenerateImage, is
 
             {/* Buffs */}
             {(player.statusEffects.regen || 0) > 0 && (
-              <div className="bg-emerald-900/30 border border-emerald-600/50 px-2 py-1 rounded flex items-center gap-2 text-xs text-emerald-400">
+              <div
+                className="bg-emerald-900/30 border border-emerald-600/50 px-2 py-1 rounded flex items-center gap-2 text-xs text-emerald-400 cursor-help"
+                title={getTranslation(language, 'regenDesc')}
+              >
                 <span>❤️ {getTranslation(language, 'regen')}</span>
                 <span className="bg-black/50 px-1 rounded text-[10px]">{player.statusEffects.regen}t</span>
               </div>
             )}
             {(player.statusEffects.stoneskin || 0) > 0 && (
-              <div className="bg-stone-800 border border-stone-500 px-2 py-1 rounded flex items-center gap-2 text-xs text-stone-300">
+              <div
+                className="bg-stone-800 border border-stone-500 px-2 py-1 rounded flex items-center gap-2 text-xs text-stone-300 cursor-help"
+                title={getTranslation(language, 'stoneskinDesc')}
+              >
                 <span>🛡️ {getTranslation(language, 'stoneskin')}</span>
                 <span className="bg-black/50 px-1 rounded text-[10px]">{player.statusEffects.stoneskin}t</span>
               </div>
             )}
             {(player.statusEffects.blur || 0) > 0 && (
-              <div className="bg-blue-900/20 border border-blue-500/50 px-2 py-1 rounded flex items-center gap-2 text-xs text-blue-300">
+              <div
+                className="bg-blue-900/20 border border-blue-500/50 px-2 py-1 rounded flex items-center gap-2 text-xs text-blue-300 cursor-help"
+                title={getTranslation(language, 'blurDesc')}
+              >
                 <span>👻 {getTranslation(language, 'blur')}</span>
                 <span className="bg-black/50 px-1 rounded text-[10px]">{player.statusEffects.blur}t</span>
               </div>
             )}
             {(player.statusEffects.raged || 0) > 0 && (
-              <div className="bg-red-900/40 border border-red-500/50 px-2 py-1 rounded flex items-center gap-2 text-xs text-red-300">
+              <div
+                className="bg-red-900/40 border border-red-500/50 px-2 py-1 rounded flex items-center gap-2 text-xs text-red-300 cursor-help"
+                title={getTranslation(language, 'ragedDesc')}
+              >
                 <span>🩸 {getTranslation(language, 'raged')}</span>
                 <span className="bg-black/50 px-1 rounded text-[10px]">{player.statusEffects.raged}t</span>
               </div>
             )}
             {player.statusEffects.focused && (
-              <div className="bg-purple-900/40 border border-purple-500/50 px-2 py-1 rounded flex items-center gap-2 text-xs text-purple-300">
+              <div
+                className="bg-purple-900/40 border border-purple-500/50 px-2 py-1 rounded flex items-center gap-2 text-xs text-purple-300 cursor-help"
+                title={getTranslation(language, 'focusedDesc')}
+              >
                 <span>🔋 {getTranslation(language, 'focused')}</span>
               </div>
             )}
@@ -229,31 +265,62 @@ const PlayerPanel: React.FC<PlayerPanelProps> = ({ player, onRegenerateImage, is
           <div className="w-8 h-8 bg-blue-900/20 rounded flex items-center justify-center mr-2 text-blue-500 shrink-0">
             🛡️
           </div>
-          <div>
-            <div className="text-sm text-slate-200">{player.equipped?.armor?.name || 'Rags'}</div>
-            <div className="text-xs text-slate-500">{getTranslation(language, 'defense')}: {player.equipped?.armor?.value || 0}</div>
+          <div className="flex-1 overflow-hidden">
+            <div className="text-sm text-slate-200 truncate">{player.equipped?.armor?.name || 'Rags'}</div>
+            <div className="text-xs text-slate-500 flex justify-between">
+              <span>{getTranslation(language, 'defense')}: {player.equipped?.armor?.value || 0}</span>
+              {(() => {
+                let effectiveDef = player.equipped?.armor?.value || 0;
+                let bonus = 0;
+                if ((player.statusEffects.stoneskin || 0) > 0) bonus += 10;
+                if ((player.statusEffects.sundered || 0) > 0) effectiveDef = Math.floor(effectiveDef * 0.5);
+                if ((player.statusEffects.raged || 0) > 0) effectiveDef = Math.floor(effectiveDef * 0.5);
+                const finalDef = effectiveDef + bonus;
+                const diff = finalDef - (player.equipped?.armor?.value || 0);
+                if (diff === 0) return null;
+                return (
+                  <span className={diff > 0 ? "text-emerald-400" : "text-red-400"}>
+                    {diff > 0 ? `+${diff}` : diff}
+                  </span>
+                );
+              })()}
+            </div>
           </div>
         </div>
 
         {/* AC */}
         <div className="flex items-center bg-slate-900/50 p-2 rounded border border-slate-700/50">
           <div className="w-8 h-8 bg-slate-700/20 rounded flex items-center justify-center mr-2 text-slate-400 shrink-0">
-            🛡️
+            🏃
           </div>
-          <div>
-            <div className="text-sm text-slate-200" title={`10 + ${Math.floor(player.stats[StatType.DEX] / 2)} (DEX) + ${player.equipped?.armor?.value || 0} (Armor)`}>{getTranslation(language, 'armorClass')}</div>
-            <div className="text-xs text-slate-500">
+          <div className="flex-1">
+            <div className="text-sm text-slate-200 flex justify-between">
+              <span title={`10 + ${Math.floor(player.stats[StatType.DEX] / 2)} (DEX)`}>{getTranslation(language, 'armorClass')}</span>
+              <span className="font-bold text-blue-400">{player.ac}</span>
+            </div>
+            <div className="text-xs text-slate-500 flex justify-between">
+              <span>
+                {(() => {
+                  const armorName = player.equipped?.armor?.name.toLowerCase() || "";
+                  let mat = "FLESH";
+                  if (armorName.includes("plate") || armorName.includes("mail") || armorName.includes("iron") || armorName.includes("steel")) mat = "PLATE";
+                  else if (armorName.includes("leather") || armorName.includes("hide") || armorName.includes("skin")) mat = "LEATHER";
+                  else if (armorName.includes("bone") || armorName.includes("skull")) mat = "BONE";
+                  return getTranslation(language, mat.toLowerCase() as any);
+                })()}
+              </span>
               {(() => {
-                const armorName = player.equipped?.armor?.name.toLowerCase() || "";
-                let mat = "FLESH";
-                if (armorName.includes("plate") || armorName.includes("mail") || armorName.includes("iron") || armorName.includes("steel")) mat = "PLATE";
-                else if (armorName.includes("leather") || armorName.includes("hide") || armorName.includes("skin")) mat = "LEATHER";
-                else if (armorName.includes("bone") || armorName.includes("skull")) mat = "BONE";
-                else if (armorName.includes("robe") || armorName.includes("cloth") || armorName.includes("silk")) mat = "FLESH";
-                return getTranslation(language, mat.toLowerCase() as any);
+                let bonus = 0;
+                if ((player.statusEffects.blur || 0) > 0) bonus += 5;
+                if ((player.statusEffects.raged || 0) > 0) bonus -= 5;
+                if (bonus === 0) return null;
+                return (
+                  <span className={bonus > 0 ? "text-emerald-400" : "text-red-400"}>
+                    {bonus > 0 ? `+${bonus}` : bonus}
+                  </span>
+                );
               })()}
             </div>
-            <div className="text-xs text-slate-500">{player.ac}</div>
           </div>
         </div>
       </div>

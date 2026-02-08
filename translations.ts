@@ -155,6 +155,19 @@ export const translations = {
         plate: 'Plate',
         bone: 'Bone',
         spirit: 'Spirit',
+        // Effect Descriptions
+        toxicDesc: "Dealing increasing damage every turn.",
+        burningDesc: "Deals 10% max HP damage at turn start.",
+        chilledDesc: "Dexterity reduced by 50%.",
+        shockedDesc: "Skill cooldowns do not decrease.",
+        sunderedDesc: "Armor/Defense reduced by 50%.",
+        blindedDesc: "Accuracy reduced by 50%.",
+        stunnedDesc: "Cannot take any actions.",
+        regenDesc: "Restoring health every turn.",
+        stoneskinDesc: "Armor/Defense increased by 10.",
+        blurDesc: "Armor Class (AC) increased by 5.",
+        ragedDesc: "Damage increased by 50%, but AC reduced by 5 and Defense halved.",
+        focusedDesc: "Next attack is a guaranteed critical hit.",
     },
     Russian: {
         round: "Раунд",
@@ -297,6 +310,19 @@ export const translations = {
         plate: 'Латы',
         bone: 'Кость',
         spirit: 'Дух',
+        // Effect Descriptions
+        toxicDesc: "Наносит увеличивающийся урон каждый ход.",
+        burningDesc: "Наносит 10% урона от макс. ХП в начале хода.",
+        chilledDesc: "Ловкость снижена на 50%.",
+        shockedDesc: "Перезарядка навыков не уменьшается.",
+        sunderedDesc: "Защита/Броня снижена на 50%.",
+        blindedDesc: "Точность атаки снижена на 50%.",
+        stunnedDesc: "Невозможно совершать действия.",
+        regenDesc: "Восстановление здоровья каждый ход.",
+        stoneskinDesc: "Защита/Броня увеличена на 10.",
+        blurDesc: "Класс Доспеха (КД/AC) увеличен на 5.",
+        ragedDesc: "Урон увеличен на 50%, но КД снижен на 5 и защита уполовинена.",
+        focusedDesc: "Следующая атака будет критической.",
     }
 };
 

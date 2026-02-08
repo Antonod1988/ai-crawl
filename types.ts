@@ -21,7 +21,9 @@ export enum SkillEffect {
   HEAL = 'HEAL',
   STUN = 'STUN',
   LEECH = 'LEECH',
-  ARMOR_BREAK = 'ARMOR_BREAK'
+  ARMOR_BREAK = 'ARMOR_BREAK',
+  SHIELD = 'SHIELD',
+  BUFF_DEFENSE = 'BUFF_DEFENSE'
 }
 
 export enum ItemType {

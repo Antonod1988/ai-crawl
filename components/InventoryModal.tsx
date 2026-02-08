@@ -37,6 +37,11 @@ const InventoryModal: React.FC<InventoryModalProps> = ({ player, onEquip, onUse,
                     {item.type === ItemType.ARMOR && `${getTranslation(language, 'defense')}: ${item.value}`}
                     {item.type === ItemType.POTION && `${getTranslation(language, 'restores')}: ${item.value} HP`}
                   </div>
+                  {item.trait && (
+                    <div className="text-xs font-bold text-fuchsia-400 mt-1 border border-fuchsia-900/50 bg-fuchsia-950/30 px-2 py-0.5 rounded inline-block">
+                      Trait: {item.trait.replace('_', ' ')}
+                    </div>
+                  )}
                   <div className="text-xs text-slate-500 mt-2">
                     {getTranslation(language, 'value')}: {Math.floor(item.cost / 2)} 🪙
                   </div>

@@ -31,6 +31,19 @@ const DEFAULT_STYLES = [
   "Haunted Space Station"
 ];
 
+const STYLE_ADJECTIVES = [
+  "Neon", "Cursed", "Underwater", "Floating", "Clockwork", "Frozen", "Obsidian", "Crystal", "Mechanical", "Savage",
+  "Radioactive", "Forgotten", "Celestial", "Infernal", "Digital", "Victorian", "Fungal", "Volcanic", "Holographic",
+  "Silly", "Cheese", "Disco", "Meme", "Pixelated", "Glitchy", "Rubber", "Invisible", "Vaporwave", "Quantum"
+];
+
+const STYLE_LOCATIONS = [
+  "Metropolis", "Jungle", "Dungeon", "Spire", "Wasteland", "Laboratory", "Catacombs", "Sky-City", "Island", "Temple",
+  "Station", "Archive", "Glacier", "Desert", "Swamp", "Factory", "Palace", "Void", "Carnival", "Library",
+  "Dimension", "Pizza-Plex", "Ballpit", "Supermarket", "Casino", "Theme Park", "Server Room", "Dumpster"
+];
+
+
 import { DEFAULT_SETTINGS } from './src/gameConfig';
 
 export default function App() {
@@ -72,6 +85,7 @@ export default function App() {
   const [maxRounds, setMaxRounds] = useState<number>(MAX_ROUNDS);
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
   const [visualPrompt, setVisualPrompt] = useState<string>("");
+  const [customActionText, setCustomActionText] = useState<string>("");
 
   // -- Helpers --
   const addLog = useCallback((text: string, type: LogEntry['type'] = 'narrative', mechanics?: string) => {
@@ -251,6 +265,23 @@ export default function App() {
     }
   };
 
+  const handleImprovisedAction = () => {
+    if (!customActionText.trim()) return;
+    // Pass custom text as a special 'skill' or argument
+    // We'll reuse handlePlayerAction but pass the text
+    handlePlayerAction('SKILL', {
+      id: 'improvised',
+      name: 'Improvised Action',
+      description: customActionText,
+      stat: StatType.DEX, // Default, will be overridden by AI
+      damageScale: 1.0,
+      cooldown: 0,
+      currentCooldown: 0,
+      isActive: true
+    } as Skill);
+    setCustomActionText(""); // Clear input
+  };
+
   const handlePlayerAction = async (actionType: 'ATTACK' | 'SKILL', skill?: Skill) => {
     if (isLoading) return;
     console.log(`handlePlayerAction: ${actionType}`, skill); // DEBUG
@@ -275,7 +306,16 @@ export default function App() {
     addLog(`You rolled a ${d20} !`, "system");
 
     try {
-      const result = await gameService.processTurn(player, enemy, actionDesc, d20, gameStyle, settings);
+      const isImprovised = skill?.id === 'improvised';
+      const result = await gameService.processTurn(
+        player,
+        enemy,
+        actionDesc,
+        d20,
+        gameStyle,
+        settings,
+        isImprovised ? skill?.description : undefined
+      );
 
       addLog(result.narrative, "narrative", result.mechanics);
 
@@ -492,7 +532,7 @@ export default function App() {
   };
 
   const handleSellItem = (item: Item) => {
-    const sellPrice = Math.floor(item.value / 2); // Assuming 'value' is the base price
+    const sellPrice = Math.floor(item.cost / 2); // Sell for half of GOLD cost (not combat value)
     setPlayer(prev => ({
       ...prev,
       gold: prev.gold + sellPrice,
@@ -553,11 +593,13 @@ export default function App() {
       if (stat === StatType.CON) {
         // CON: Max HP = Base (20) + (CON * 5)
         newMaxHp = 20 + (newStats[StatType.CON] * 5);
-        newHp = p.hp + 10; // +2 CON * 5 = +10 HP
       } else if (stat === StatType.DEX) {
         // DEX: Update AC display (10 + DEX/2)
         newAc = 10 + Math.floor(newStats[StatType.DEX] / 2);
       }
+
+      // Heal to full on level up stat increase as requested
+      newHp = newMaxHp;
 
       return {
         ...p,
@@ -716,7 +758,8 @@ export default function App() {
             <h3 className="text-lg font-fantasy text-blue-400 mb-3 border-b border-slate-700 pb-1">{getTranslation(settings.language, 'skills')}</h3>
             <div className="space-y-2">
               {player.skills.map(skill => {
-                const estimatedDmg = Math.floor(player.stats[skill.stat] * skill.damageScale);
+                const intPower = 1 + ((player.stats[StatType.INT] || 10) * 0.02);
+                const estimatedDmg = Math.floor(Math.floor(player.stats[skill.stat] * skill.damageScale) * intPower);
                 return (
                   <button
                     key={skill.id}
@@ -744,7 +787,7 @@ export default function App() {
                                     skill.damageType === DamageType.PIERCING ? '🏹' : '⚔️'}
                       </div>
                     )}
-                    <div className="text-xs text-amber-600 font-mono my-0.5">
+                    <div className="text-xs text-amber-600 font-mono my-0.5" title="Includes INT Bonus">
                       ~{estimatedDmg} Dmg (Scales w/ {skill.stat})
                     </div>
                     <div className="text-xs text-slate-500 truncate">{skill.description}</div>
@@ -863,7 +906,11 @@ export default function App() {
                             placeholder="e.g. Cyberpunk, Cheese World..."
                           />
                           <button
-                            onClick={() => setGameStyle(DEFAULT_STYLES[Math.floor(Math.random() * DEFAULT_STYLES.length)])}
+                            onClick={() => {
+                              const adj = STYLE_ADJECTIVES[Math.floor(Math.random() * STYLE_ADJECTIVES.length)];
+                              const loc = STYLE_LOCATIONS[Math.floor(Math.random() * STYLE_LOCATIONS.length)];
+                              setGameStyle(`${adj} ${loc}`);
+                            }}
                             className="absolute right-2 top-2 bottom-2 w-10 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-amber-400 rounded flex items-center justify-center transition-colors border border-slate-700"
                             title={getTranslation(settings.language, 'randomizeTheme')}
                           >
@@ -1154,6 +1201,25 @@ export default function App() {
                           </div>
                         </button>
                       ))}
+                    </div>
+
+                    {/* Improvised Action Input */}
+                    <div className="flex gap-2 mt-4 pt-4 border-t border-slate-700">
+                      <input
+                        type="text"
+                        value={customActionText}
+                        onChange={(e) => setCustomActionText(e.target.value)}
+                        placeholder="Improvise... (e.g. 'Throw sand')"
+                        className="flex-1 bg-slate-950 border border-slate-600 text-slate-200 px-3 py-2 rounded text-sm focus:border-amber-500 outline-none"
+                        onKeyDown={(e) => e.key === 'Enter' && handleImprovisedAction()}
+                      />
+                      <button
+                        onClick={handleImprovisedAction}
+                        disabled={!customActionText.trim() || isLoading}
+                        className="bg-purple-900/80 hover:bg-purple-800 text-purple-100 px-4 py-2 rounded border border-purple-700 font-bold text-sm transition-all disabled:opacity-50"
+                      >
+                        🎲 Do It!
+                      </button>
                     </div>
                   </div>
 

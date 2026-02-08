@@ -1,6 +1,6 @@
 
 import { Type, Schema } from "@google/genai";
-import { Player, Enemy, TurnResponse, ItemType, StatType, Skill, Item, Difficulty, GameSettings, AIProvider, SkillEffect, StatusEffects, DamageType, MaterialType } from "../types";
+import { Player, Enemy, TurnResponse, ItemType, StatType, Skill, Item, Difficulty, GameSettings, AIProvider, SkillEffect, StatusEffects, DamageType, MaterialType, CombatTrait } from "../types";
 
 const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
 const IMAGE_MODEL_NAME = "imagen-4.0-generate-001";
@@ -99,7 +99,7 @@ export class GameMasterService {
   }
 
   // Consolidated generic LLM call for all providers (OpenRouter, OpenAI, Local)
-  private async callGenericLLM(settings: GameSettings, prompt: string, schema: Schema, systemInstruction?: string): Promise<any> {
+  private async callGenericLLM(settings: GameSettings, prompt: string, schema: Schema, systemInstruction?: string, temperature: number = 0.8): Promise<any> {
     const apiKey = this.getApiKey(settings);
     const model = settings.modelName || "mistralai/mistral-7b-instruct";
 
@@ -125,7 +125,7 @@ export class GameMasterService {
         { role: "system", content: fullSystemPrompt },
         { role: "user", content: prompt }
       ],
-      temperature: 0.8
+      temperature: temperature
     };
 
     // Some models support response_format: { type: "json_object" }
@@ -182,11 +182,11 @@ export class GameMasterService {
     }
   }
 
-  private async callAI(settings: GameSettings, prompt: string, schema: Schema, systemInstruction?: string): Promise<any> {
+  private async callAI(settings: GameSettings, prompt: string, schema: Schema, systemInstruction?: string, temperature: number = 0.8): Promise<any> {
     const timeoutMs = 60000; // Increased timeout for slower models
 
     // Redirect Gemini setting to Generic/OpenRouter logic if it persists in UI but we removed SDK
-    const aiCall = this.callGenericLLM(settings, prompt, schema, systemInstruction);
+    const aiCall = this.callGenericLLM(settings, prompt, schema, systemInstruction, temperature);
 
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error("AI request timed out")), timeoutMs);
@@ -200,7 +200,7 @@ export class GameMasterService {
   // Helper methods removed as they are no longer used in the new system
   // calculateDamage and getStatForAction were replaced by direct Four Pillars logic
 
-  private generateLootItem(level: number, difficulty: string = 'Minion'): { type: ItemType, value: number, cost: number, statModifier?: StatType, damageType?: DamageType } {
+  private generateLootItem(level: number, difficulty: string = 'Minion'): { type: ItemType, value: number, cost: number, statModifier?: StatType, damageType?: DamageType, trait?: CombatTrait } {
     const rand = Math.random();
     let difficultyMultiplier = 1;
     if (difficulty === 'Elite') difficultyMultiplier = 1.5;
@@ -218,12 +218,26 @@ export class GameMasterService {
         ? [DamageType.MAGIC, DamageType.FIRE, DamageType.ICE, DamageType.POISON][Math.floor(Math.random() * 4)]
         : physicalTypes[Math.floor(Math.random() * physicalTypes.length)];
 
+      // Assign Combat Trait (New Logic)
+      let trait: any = undefined;
+      const traitChance = difficulty === 'Boss' ? 1.0 : (difficulty === 'Elite' ? 0.5 : 0.2);
+
+      if (Math.random() < traitChance) {
+        const traits = [
+          'Lifesteal', 'Execute', 'Critical', 'Pierce', 'Midas', 'Scavenger',
+          'Berserk', 'Glass_Cannon', 'Stun', 'Thorns', 'Evasion'
+        ];
+        // Filter traits that might conflict or be weird? No, all seem fine for weapons.
+        trait = traits[Math.floor(Math.random() * traits.length)];
+      }
+
       return {
         type: ItemType.WEAPON,
         value: value,
-        cost: value * 20,
+        cost: value * 20 + (trait ? 100 : 0),
         statModifier: Math.random() > 0.5 ? StatType.STR : StatType.DEX,
-        damageType: damageType
+        damageType: damageType,
+        trait: trait
       };
     } else if (rand < 0.7) {
       // Armor (30%)
@@ -263,6 +277,7 @@ export class GameMasterService {
       Generate names and descriptions for these RPG items.
       LANGUAGE: ${settings.language}
       THEME: Fantasy/Sci-Fi (fitting the game world)
+      Random Seed: ${Math.random()} (Ensure uniqueness)
       
       ITEMS:
       ${rawItems.map((item, index) => `${index + 1}. ${item.isElite ? 'ELITE ' : ''}${item.type} (Value: ${item.value})`).join('\n')}
@@ -284,7 +299,7 @@ export class GameMasterService {
 
     let aiData: any[] = [];
     try {
-      aiData = await this.callAI(settings, prompt, schema);
+      aiData = await this.callAI(settings, prompt, schema, undefined, 1.0); // High temp for varied shop items
     } catch (e) {
       console.error("Merchant Item Generation Failed", e);
       // Fallback
@@ -302,7 +317,9 @@ export class GameMasterService {
       type: item.type,
       value: item.value,
       cost: item.cost,
-      statModifier: item.statModifier
+      statModifier: item.statModifier,
+      damageType: item.damageType,
+      trait: item.trait
     }));
   }
 
@@ -323,7 +340,7 @@ export class GameMasterService {
       - name: Creative name
       - description: Short description
       - stat: Must be "${stat}"
-      - effect: One of [DAMAGE, HEAL, STUN, LEECH, ARMOR_BREAK]
+      - effect: One of [DAMAGE, HEAL, STUN, LEECH, ARMOR_BREAK, SHIELD, BUFF_DEFENSE]
       - damageType: "DamageType (SLASHING, BLUNT, PIERCING, MAGIC, FIRE, ICE, POISON) - Choose based on skill nature"
       - effectValue: number (e.g. 1 for stun, 2 for break, 0 for others)
       
@@ -347,7 +364,7 @@ export class GameMasterService {
               name: { type: Type.STRING },
               description: { type: Type.STRING },
               stat: { type: Type.STRING, enum: [StatType.STR, StatType.DEX, StatType.INT, StatType.CON] },
-              effect: { type: Type.STRING, enum: [SkillEffect.DAMAGE, SkillEffect.HEAL, SkillEffect.STUN, SkillEffect.LEECH, SkillEffect.ARMOR_BREAK], nullable: true },
+              effect: { type: Type.STRING, enum: [SkillEffect.DAMAGE, SkillEffect.HEAL, SkillEffect.STUN, SkillEffect.LEECH, SkillEffect.ARMOR_BREAK, SkillEffect.SHIELD, SkillEffect.BUFF_DEFENSE], nullable: true },
               effectValue: { type: Type.INTEGER, nullable: true },
               damageType: { type: Type.STRING, enum: Object.values(DamageType), nullable: true }
             },
@@ -515,7 +532,14 @@ export class GameMasterService {
       Generate flavor text for a Level 1 RPG character.
       THEME: "${theme}"
       LANGUAGE: ${settings.language}
+      Random Seed: ${Math.random()} (Ensure variety)
       
+      NAMING INSTRUCTIONS:
+      - Style: ${['Ancient', 'Futuristic', 'Guttural', 'Melodic', 'Scientific', 'Sharp', 'Nature-based', 'Abstract'][Math.floor(Math.random() * 8)]}
+      - FORMAT: Generate names with TITLES or EPITHETS (e.g., "Vorlag of the Whispering Cairns", "Kael the Sun-Breaker", "Lyra of the Void", "Thorne Iron-Heart").
+      - DO NOT use common names like: Grimbold, Morwen, Elara.
+      - Create a name that sounds unique, distinct, and epic.
+
       USER REQUIREMENTS:
       1. Name: ${playerName ? `Must be strictly "${playerName}"` : 'Fitting for the setting.'}
       2. Gender: ${gender && gender !== 'Unknown' ? `STRICTLY "${gender}"` : 'Any fitting the theme'}
@@ -543,7 +567,7 @@ export class GameMasterService {
     `;
 
     try {
-      const data = await this.callAI(settings, prompt, characterGenerationSchema);
+      const data = await this.callAI(settings, prompt, characterGenerationSchema, undefined, 1.0); // High temp for character flavor
 
       // MERGE LLM FLAVOR WITH HARDCODED STATS
       return {
@@ -599,9 +623,10 @@ export class GameMasterService {
 
     const prompt = `
       Context: The player is in a ${style} setting.
-      Create a unique enemy for this environment.
+      Create a unique, creative, and distinct enemy for this environment.
       Player Level: ${playerLevel}.
       Language: ${settings.language} (Generate Name and Description in this language).
+      Random Seed: ${Math.random()} (Ensure variety).
       
       Pick ONE Combat Role: [TANK, SWARM, ASSASSIN, BRUTE, BALANCED].
       Pick ONE Special Trait: [Fire, Poison, Lifesteal, Armor_Pierce, None].
@@ -634,7 +659,7 @@ export class GameMasterService {
 
     let enemyData: any;
     try {
-      enemyData = await this.callAI(settings, prompt, schema);
+      enemyData = await this.callAI(settings, prompt, schema, undefined, 1.0); // High temp for creative names
     } catch (e) {
       console.error("AI Generation failed, using fallback", e);
       enemyData = {
@@ -745,38 +770,106 @@ export class GameMasterService {
     };
 
     return {
-      narrative: `You encounter a ${enemy.name}. ${enemy.description}`,
       enemy: enemy,
-      visualPrompt: `A ${style} style enemy: ${enemy.description}`
+      narrative: `You encounter a ${enemy.name}. ${enemy.description}`,
+      visualPrompt: enemyData.visualPrompt || "A fearsome foe." // Assuming visualPrompt might come from enemyData or a default
     };
   }
 
-  async processTurn(
-    player: Player,
-    enemy: Enemy | null,
-    action: string,
-    diceRoll: number,
-    style: string,
-    settings: GameSettings,
-    skill?: Skill
-  ): Promise<TurnResponse> {
+  async interpretImprovisedAction(actionText: string, player: Player, enemy: Enemy, settings: GameSettings): Promise<{ stat: StatType, effect: SkillEffect, value: number, damageType: DamageType, description: string }> {
+    const prompt = `
+      Context: The player is attempting an improvised action in combat.
+      Player Stats: Strength=${player.stats.Strength}, Dexterity=${player.stats.Dexterity}, Intelligence=${player.stats.Intelligence}, Constitution=${player.stats.Constitution}.
+      Enemy: ${enemy.name} (${enemy.description}).
+      Player Action: "${actionText}".
+      
+      Analyze the player's action and determine the most appropriate primary stat, skill effect, and a reasonable value for that effect.
+      Consider the player's stats and the enemy's description.
+      
+      Choose ONE primary stat: [Strength, Dexterity, Intelligence, Constitution].
+      Choose ONE skill effect: [DAMAGE, HEAL, STUN, ARMOR_BREAK, APPLY_STATUS, BUFF_PLAYER, DEBUFF_ENEMY].
+      Choose ONE damage type if the effect is DAMAGE: [SLASHING, BLUNT, PIERCING, MAGIC, FIRE, ICE, POISON]. If not DAMAGE, default to BLUNT.
+      
+      Return JSON format:
+      {
+        "stat": "String",
+        "effect": "String",
+        "value": "Number",
+        "damageType": "String",
+        "description": "String"
+      }
+    `;
 
-    if (!enemy) {
-      throw new Error("No enemy to fight!");
+    const schema: Schema = {
+      type: Type.OBJECT,
+      properties: {
+        stat: { type: Type.STRING, enum: Object.values(StatType) },
+        effect: { type: Type.STRING, enum: Object.values(SkillEffect) },
+        value: { type: Type.NUMBER },
+        damageType: { type: Type.STRING, enum: Object.values(DamageType) },
+        description: { type: Type.STRING }
+      },
+      required: ["stat", "effect", "value", "damageType", "description"]
+    };
+
+    try {
+      return await this.callAI(settings, prompt, schema, undefined, 0.5); // Low temp for mechanics
+    } catch (e) {
+      console.error("Improvised Action Failed", e);
+      return { stat: StatType.DEX, effect: SkillEffect.DAMAGE, value: 5, damageType: DamageType.BLUNT, description: "You flail wildly." };
     }
+  }
 
-    // --- 1. INITIALIZE STATS & EFFECTS ---
+  async processTurn(player: Player, enemy: Enemy, playerAction: string, diceRoll: number, style: string, settings: GameSettings, customActionText?: string): Promise<TurnResponse> {
+    let aiResponse: any;
+    let mechanicsLog = "";
+
+    // 1. CALCULATE PLAYER DAMAGE / HEALING (The Four Pillars System)
     const pStr = player.stats.Strength || 10;
     const pDex = player.stats.Dexterity || 10;
     const pInt = player.stats.Intelligence || 10;
     const pCon = player.stats.Constitution || 10;
 
+    // Enemy Stats (Add defaults or lookups)
     const eStr = enemy.stats?.Strength || 10;
     const eDex = enemy.stats?.Dexterity || 10;
 
-    // Initialize effects if missing (safe copy)
-    const pEffects: StatusEffects = { ...player.statusEffects };
-    const eEffects: StatusEffects = { ...enemy.statusEffects };
+    let playerDamage = 0;
+    let playerHeal = 0;
+    const eEffects = { ...enemy.statusEffects };
+    const pEffects = { ...player.statusEffects };
+
+    // Parse Action
+    let skill: Skill | undefined;
+
+    // Check if it's a skill usage
+    // We assume the FE passes "uses skill SkillName" or similar, 
+    // BUT for accurate stats, we should probably pass the Skill object or ID.
+    // For now, let's extract the skill name if present.
+    // OR better: use the 'customActionText' if provided.
+
+    if (customActionText) {
+      // IMPROVISED ACTION LOGIC
+      const interpretation = await this.interpretImprovisedAction(customActionText, player, enemy, settings);
+
+      // Construct a temporary "Skill" to reuse logic
+      skill = {
+        id: 'improvised',
+        name: 'Improvised',
+        description: interpretation.description,
+        stat: interpretation.stat,
+        effect: interpretation.effect,
+        effectValue: interpretation.value,
+        damageType: interpretation.damageType,
+        cooldown: 0,
+        currentCooldown: 0,
+        damageScale: 1.0 // Base scale, value handled by effectValue
+      };
+      mechanicsLog += `(Improvised: ${interpretation.description} using ${interpretation.stat}) `;
+    } else if (playerAction.includes("uses skill")) {
+      const skillName = playerAction.split("uses skill ")[1].trim();
+      skill = player.skills.find(s => s.name === skillName);
+    }
 
     // Traits & Materials
     const playerTrait = skill?.trait || player.equipped.weapon?.trait || 'None';
@@ -789,10 +882,6 @@ export class GameMasterService {
     if (armorName.includes('plate') || armorName.includes('mail') || armorName.includes('metal')) playerMaterial = MaterialType.PLATE;
     else if (armorName.includes('leather') || armorName.includes('hide') || armorName.includes('skin')) playerMaterial = MaterialType.LEATHER;
     else if (armorName.includes('bone')) playerMaterial = MaterialType.BONE;
-
-    let mechanicsLog = "";
-    let playerDamage = 0;
-    let playerHeal = 0;
 
     // --- 2. START OF TURN TICKS (Status Effects) ---
     const processTicks = (effects: StatusEffects, entityName: string, maxHp: number) => {
@@ -809,9 +898,9 @@ export class GameMasterService {
         effects.toxic = (effects.toxic || 0) + 1;
       }
 
-      // Burning: 10% Max HP (Proxy for 10% Atk Dmg to keep it scalable/dangerous)
+      // Burning: 12% Max HP - Dangerous!
       if ((effects.burning || 0) > 0) {
-        const burnDmg = Math.max(1, Math.ceil(maxHp * 0.10));
+        const burnDmg = Math.max(3, Math.ceil(maxHp * 0.12));
         damage += burnDmg;
         log += `(Burn: -${burnDmg} HP) `;
         effects.burning = (effects.burning || 0) - 1;
@@ -822,10 +911,11 @@ export class GameMasterService {
         }
       }
 
-      // Regen
+      // Regen: 5% Max HP - Scalable and Noticeable
       if ((effects.regen || 0) > 0) {
-        heal += 2; // Base regen
-        if (pCon >= 20 && entityName === 'Player') heal += 1; // Con Bonus
+        const baseHeal = Math.max(4, Math.ceil(maxHp * 0.05));
+        heal += baseHeal;
+        if (pCon >= 20 && entityName === 'Player') heal += Math.floor(maxHp * 0.02); // +2% for high CON
         log += `(Regen: +${heal} HP) `;
         effects.regen = (effects.regen || 0) - 1;
       }
@@ -961,13 +1051,30 @@ export class GameMasterService {
           } else if (skill.effect === SkillEffect.ARMOR_BREAK) {
             eEffects.sundered = Math.max(eEffects.sundered || 0, skill.effectValue || 2);
             mechanicsLog += `Sundered! `;
+          } else if (skill.effect === SkillEffect.LEECH) {
+            const leechAmt = Math.floor(rawDmg * (skill.effectValue ? skill.effectValue / 100 : 0.5)); // 50% Leech Default
+            playerHeal += leechAmt;
+            mechanicsLog += `(Leech +${leechAmt}) `;
+          } else if (skill.effect === SkillEffect.SHIELD) {
+            const shieldAmt = skill.effectValue || Math.floor(player.maxHp * 0.15); // 15% Max HP Shield
+            pEffects.shield = (pEffects.shield || 0) + shieldAmt;
+            playerDamage = 0;
+            rawDmg = 0; // Defensive skill only? usually.
+            mechanicsLog += `(Shield +${shieldAmt}) `;
+          } else if (skill.effect === SkillEffect.BUFF_DEFENSE) { // Stoneskin
+            pEffects.stoneskin = (pEffects.stoneskin || 0) + (skill.effectValue || 2); // Duration
+            playerDamage = 0;
+            rawDmg = 0;
+            mechanicsLog += `(Stoneskin +${skill.effectValue || 2} turns) `;
           } else if (skill.trait === 'Poison' || skill.damageType === DamageType.POISON || skill.trait === 'Fire' || skill.trait === 'Ice') {
             // Handle explicit trait/type effects here? 
             // Logic below handles generic trait/type mapping
           }
         } else {
           // Basic Attack
-          let baseDmg = weaponDmg + pStr;
+          const weaponStat = player.equipped.weapon?.statModifier || StatType.STR;
+          const statValue = player.stats[weaponStat] || 10;
+          let baseDmg = weaponDmg + statValue;
           if (isPlayerCrit) { baseDmg *= 2; mechanicsLog += "CRIT! "; }
           const wobble = 0.9 + (Math.random() * 0.2);
           rawDmg = Math.floor(baseDmg * wobble);
@@ -1258,7 +1365,7 @@ export class GameMasterService {
 
     const outcomeSummary = `
       ACTION REPORT:
-      - Player Action: ${action}
+      - Player Action: ${customActionText || playerAction}
       - Player Damage: ${playerDamage}
       - Enemy Damage: ${enemyDamage}
       - Status: ${isEnemyDefeated ? 'DEFEATED' : 'ALIVE'}
@@ -1284,7 +1391,7 @@ export class GameMasterService {
     };
 
     try {
-      const aiResponse = await this.callAI(settings, prompt, narrativeSchema);
+      aiResponse = await this.callAI(settings, prompt, narrativeSchema);
 
       // Final Rewards
       let diffMult = 1.0;
@@ -1322,7 +1429,7 @@ export class GameMasterService {
     } catch (e) {
       console.error("Narrative Generation Failed:", e);
       return {
-        narrative: `You ${action}. You deal ${playerDamage} damage. The enemy deals ${enemyDamage} damage.`,
+        narrative: `You ${customActionText || playerAction}. You deal ${playerDamage} damage. The enemy deals ${enemyDamage} damage.`,
         mechanics: mechanicsLog + " (AI Narrative Failed)",
         damageDealtToPlayer: netPlayerDamage,
         damageDealtToEnemy: netEnemyDamage,
