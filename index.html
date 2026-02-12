@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    // Global Error Handler for "Blue Screen" debugging
+    window.onerror = function (message, source, lineno, colno, error) {
+      var errorDiv = document.createElement('div');
+      errorDiv.style.position = 'fixed';
+      errorDiv.style.top = '0';
+      errorDiv.style.left = '0';
+      errorDiv.style.width = '100%';
+      errorDiv.style.height = '100%';
+      errorDiv.style.backgroundColor = 'rgba(0,0,0,0.9)';
+      errorDiv.style.color = 'red';
+      errorDiv.style.zIndex = '9999';
+      errorDiv.style.padding = '20px';
+      errorDiv.style.overflow = 'auto';
+      errorDiv.innerHTML = '<h3>Critical Error:</h3>' +
+        '<p>' + message + '</p>' +
+        '<p>' + source + ':' + lineno + '</p>' +
+        '<pre>' + (error ? error.stack : 'No stacktrace') + '</pre>';
+      document.body.appendChild(errorDiv);
+    };
+  </script>
+  <title>Aether Crawl</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;600&family=Cinzel:wght@400;700&display=swap');
+
+    body {
+      background-color: #0f172a;
+      color: #e2e8f0;
+      font-family: 'Fira Code', monospace;
+    }
+
+    .font-fantasy {
+      font-family: 'Cinzel', serif;
+    }
+
+    /* Custom scrollbar for the log */
+
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+
+    .scrollbar-custom::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .scrollbar-custom::-webkit-scrollbar-track {
+      background: #1e293b;
+    }
+
+    .scrollbar-custom::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 4px;
+    }
+
+    .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
+    }
+  </style>
+
+  <link rel="stylesheet" href="/index.css">
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "react-dom": "https://aistudiocdn.com/react-dom@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+  }
+}
+</script>
+  <script type="module" crossorigin src="/ai-crawl/assets/index-C_acvTnM.js"></script>
+</head>
+
+<body>
+  <div id="root"></div>
+</body>
+
+</html>
